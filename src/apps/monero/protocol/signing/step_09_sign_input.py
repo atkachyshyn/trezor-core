@@ -1,5 +1,5 @@
 """
-Generates a signature for one input.
+Generates a MLSAG signature for one input.
 """
 
 import gc
@@ -128,15 +128,13 @@ async def sign_input(
     gc.collect()
     state.mem_trace(4)
 
-    # RCT signature
     from apps.monero.xmr import mlsag
 
     if state.rct_type == RctType.Simple:
-        # Simple RingCT
-        mix_ring = [x.key for x in src_entr.outputs]
-        mg, msc = mlsag.prove_rct_mg_simple(
+        ring_pubkeys = [x.key for x in src_entr.outputs]
+        mg = mlsag.generate_mlsag_simple(
             state.full_message,
-            mix_ring,
+            ring_pubkeys,
             input_secret_key,
             pseudo_out_alpha,
             pseudo_out_c,
@@ -147,11 +145,10 @@ async def sign_input(
     else:
         # Full RingCt, only one input
         txn_fee_key = crypto.scalarmult_h(state.fee)
-        mix_ring = [[x.key] for x in src_entr.outputs]
-
-        mg, msc = mlsag.prove_rct_mg(
+        ring_pubkeys = [[x.key] for x in src_entr.outputs]
+        mg = mlsag.generate_mlsag_full(
             state.full_message,
-            mix_ring,
+            ring_pubkeys,
             [input_secret_key],
             state.output_sk_masks,
             state.output_pk_commitments,
