@@ -68,6 +68,21 @@ static int ethereum_is_canonic(uint8_t v, uint8_t signature[64])
 	return (v & 2) == 0;
 }
 
+static int eos_is_canonic(uint8_t v, uint8_t signature[64])
+{
+    (void) v;
+    return !(signature[0] & 0x80) 
+        && !(signature[0] == 0 
+        && !(signature[1] & 0x80)) 
+        && !(signature[32] & 0x80) 
+        && !(signature[32] == 0 && !(signature[33] & 0x80));
+}
+
+enum {
+    CANONICAL_SIG_ETHEREUM = 1,
+    CANONICAL_SIG_EOS = 2,
+};
+
 /// def sign(secret_key: bytes, digest: bytes, compressed: bool = True, ethereum_canonical: bool = False) -> bytes:
 ///     '''
 ///     Uses secret key to produce the signature of the digest.
@@ -77,10 +92,15 @@ STATIC mp_obj_t mod_trezorcrypto_secp256k1_sign(size_t n_args, const mp_obj_t *a
     mp_get_buffer_raise(args[0], &sk, MP_BUFFER_READ);
     mp_get_buffer_raise(args[1], &dig, MP_BUFFER_READ);
     bool compressed = (n_args < 3) || (args[2] == mp_const_true);
-    bool ethereum_canonical = (n_args > 3) && (args[3] == mp_const_true);
+    mp_int_t canonical = (n_args > 3) ? mp_obj_get_int(args[3]) : 0;
     int (*is_canonical)(uint8_t by, uint8_t sig[64]) = NULL;
-    if (ethereum_canonical) {
-        is_canonical = ethereum_is_canonic;
+    switch (canonical) {
+        case CANONICAL_SIG_ETHEREUM:
+            is_canonical = ethereum_is_canonic;
+            break;
+        case CANONICAL_SIG_EOS:
+            is_canonical = eos_is_canonic;
+            break;
     }
     if (sk.len != 32) {
         mp_raise_ValueError("Invalid length of secret key");
@@ -186,6 +206,8 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_secp256k1_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_verify), MP_ROM_PTR(&mod_trezorcrypto_secp256k1_verify_obj) },
     { MP_ROM_QSTR(MP_QSTR_verify_recover), MP_ROM_PTR(&mod_trezorcrypto_secp256k1_verify_recover_obj) },
     { MP_ROM_QSTR(MP_QSTR_multiply), MP_ROM_PTR(&mod_trezorcrypto_secp256k1_multiply_obj) },
+    { MP_ROM_QSTR(MP_QSTR_CANONICAL_SIG_ETHEREUM), MP_OBJ_NEW_SMALL_INT(CANONICAL_SIG_ETHEREUM) },
+    { MP_ROM_QSTR(MP_QSTR_CANONICAL_SIG_EOS), MP_OBJ_NEW_SMALL_INT(CANONICAL_SIG_EOS) },
 };
 STATIC MP_DEFINE_CONST_DICT(mod_trezorcrypto_secp256k1_globals, mod_trezorcrypto_secp256k1_globals_table);
 
