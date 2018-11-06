@@ -51,15 +51,15 @@ def eos_asset_to_string(asset: EosAsset) -> str:
     return "%s.%s %s" % (integer, fraction, symbol)
 
 def pack_variant32(value: int) -> str:
-    out = ''
+    out = bytearray()
     val = value
     while True:
         b = val & 0x7f
         val >>= 7
         b |= ((val > 0) << 7)
-        out += chr(b)
+        out.append(b)
 
         if val == 0:
             break
 
-    return out
+    return bytes(out)
