@@ -65,6 +65,9 @@ test: ## run unit tests
 test_emu: ## run selected device tests from python-trezor
 	cd tests ; ./run_tests_device_emu.sh $(TESTOPTS)
 
+test_emu_monero: ## run selected monero device tests from monero-agent
+	cd tests ; ./run_tests_device_emu_monero.sh $(TESTOPTS)
+
 pylint: ## run pylint on application sources and tests
 	pylint -E $(shell find src tests -name *.py)
 
@@ -120,6 +123,9 @@ build_unix: res ## build unix port
 
 build_unix_noui: res ## build unix port without UI support
 	$(SCONS) CFLAGS="$(CFLAGS)" $(UNIX_BUILD_DIR)/micropython $(UNIX_PORT_OPTS) TREZOR_EMULATOR_NOUI=1
+
+build_unix_raspi: res ## build unix port for Raspberry Pi
+	$(SCONS) CFLAGS="$(CFLAGS)" $(UNIX_BUILD_DIR)/micropython $(UNIX_PORT_OPTS) TREZOR_EMULATOR_RASPI=1
 
 build_cross: ## build mpy-cross port
 	$(MAKE) -C vendor/micropython/mpy-cross $(CROSS_PORT_OPTS)

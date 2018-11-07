@@ -22,6 +22,8 @@
 #include "ecdsa.h"
 #include "secp256k1.h"
 
+/// package: trezorcrypto.secp256k1
+
 /// def generate_secret() -> bytes:
 ///     '''
 ///     Generate secret key.
@@ -62,9 +64,9 @@ STATIC mp_obj_t mod_trezorcrypto_secp256k1_publickey(size_t n_args, const mp_obj
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorcrypto_secp256k1_publickey_obj, 1, 2, mod_trezorcrypto_secp256k1_publickey);
 
-static int ethereum_is_canonic(uint8_t v, uint8_t signature[64])
+static int ethereum_is_canonical(uint8_t v, uint8_t signature[64])
 {
-	(void) signature;
+	(void)signature;
 	return (v & 2) == 0;
 }
 

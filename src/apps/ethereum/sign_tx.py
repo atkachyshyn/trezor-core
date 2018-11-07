@@ -61,7 +61,7 @@ async def sign_tx(ctx, msg):
 
     total_length = get_total_length(msg, data_total)
 
-    sha = HashWriter(sha3_256, keccak=True)
+    sha = HashWriter(sha3_256(keccak=True))
     sha.extend(rlp.encode_length(total_length, True))  # total length
 
     if msg.tx_type is not None:
@@ -131,7 +131,9 @@ async def send_signature(ctx, msg: EthereumSignTx, digest):
     address_n = msg.address_n or ()
     node = await seed.derive_node(ctx, address_n)
 
-    signature = secp256k1.sign(node.private_key(), digest, False, secp256k1.CANONICAL_SIG_ETHEREUM)
+    signature = secp256k1.sign(
+        node.private_key(), digest, False, secp256k1.CANONICAL_SIG_ETHEREUM
+    )
 
     req = EthereumTxRequest()
     req.signature_v = signature[0]
