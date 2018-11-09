@@ -45,7 +45,6 @@ async def _init(ctx, sha, msg):
 async def _actions(ctx, sha, num_actions: int):
     for i in range(num_actions):
         action = await ctx.call(EosTxActionRequest(), *consts.action_wire_types)
-        log.debug(__name__, "Message name to produce:" + str(ctx.call(EosTxActionRequest())))
         await process_action(ctx, sha, action)
 
 def check(msg: EosSignTx):
