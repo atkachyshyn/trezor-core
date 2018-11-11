@@ -1,3 +1,5 @@
+from ubinascii import hexlify
+
 from trezor.messages import ButtonRequestType
 from trezor.messages import EosActionBuyRam
 from trezor.messages import EosActionBuyRamBytes
@@ -22,6 +24,8 @@ from trezor.messages.ButtonRequest import ButtonRequest
 from trezor.messages import MessageType
 from trezor.ui.confirm import ConfirmDialog
 from trezor.ui.scroll import Scrollpage, animate_swipe, paginate
+from trezor.utils import HashWriter
+from trezor.crypto.hashlib import sha256
 
 from apps.eos import helpers
 from apps.eos.get_public_key import _public_key_to_wif
@@ -32,6 +36,7 @@ LINE_LENGTH = 17
 LINE_PLACEHOLDER = "{:<" + str(LINE_LENGTH)+"}"
 FIRST_PAGE = 0
 TWO_FIELDS_PER_PAGE = 2
+THREE_FIELDS_PER_PAGE = 3
 FOUR_FIELDS_PER_PAGE = 4
 FIVE_FIELDS_PER_PAGE = 5
 
@@ -259,13 +264,25 @@ def confirm_action_newaccount(ctx, msg: EosActionNewAccount):
     await ctx.wait(paginator)
 
 def confirm_action_unknown(ctx, action, msg: EosActionUnknown):
-    text = Text("Unknown Action", ui.ICON_CONFIRM, icon_color=ui.GREEN)
-    text.normal("Do it at your own risk")
-    text.normal("Contract:")
-    text.normal(helpers.eos_name_to_string(action.account))
-    text.normal("Action Name:")
-    text.normal(helpers.eos_name_to_string(action.name))
-    await require_confirm(ctx, text, ButtonRequestType.ConfirmOutput)
+    await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
+    text = "Unknown Action"
+    fields = []
+    fields.append("Do it at your own risk")
+    fields.append("Contract:")
+    fields.append(helpers.eos_name_to_string(action.account))
+    fields.append("Action Name:")
+    fields.append(helpers.eos_name_to_string(action.name))
+
+    sha = HashWriter(sha256)
+    sha.extend(helpers.pack_variant32(len(msg.data)))
+    sha.extend(msg.data)
+    fields.append("Checksum:")
+    fields.append(hexlify(sha.get_digest()).decode('ascii'))
+
+    pages = list(chunks(fields, THREE_FIELDS_PER_PAGE))
+    paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
+
+    await ctx.wait(paginator)
 
 @ui.layout
 async def show_lines_page(page: int, page_count: int, pages: list, header: str):

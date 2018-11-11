@@ -51,3 +51,30 @@ async def process_action(ctx, sha, action):
         updaters.hashupdate_action_unknown(sha, action.unknown)
     else:
         raise ValueError("Unknown action")
+
+def check_action(action):
+    account = action.common.account
+    name = action.common.name
+
+    if account == helpers.eos_name_string_to_number('eosio'):
+        if (name == helpers.eos_name_string_to_number('buyram') and action.buy_ram is not None) or \
+            (name == helpers.eos_name_string_to_number('buyrambytes') and action.buy_ram_bytes is not None) or \
+            (name == helpers.eos_name_string_to_number('sellram') and action.sell_ram is not None) or \
+            (name == helpers.eos_name_string_to_number('delegatebw') and action.delegate is not None) or \
+            (name == helpers.eos_name_string_to_number('undelegatebw') and action.undelegate is not None) or \
+            (name == helpers.eos_name_string_to_number('refund') and action.refund is not None) or \
+            (name == helpers.eos_name_string_to_number('voteproducer') and action.vote_producer is not None) or \
+            (name == helpers.eos_name_string_to_number('updateauth') and action.update_auth is not None) or \
+            (name == helpers.eos_name_string_to_number('deleteauth') and action.delete_auth is not None) or \
+            (name == helpers.eos_name_string_to_number('linkauth') and action.link_auth is not None) or \
+            (name == helpers.eos_name_string_to_number('unlinkauth') and action.unlink_auth is not None) or \
+            (name == helpers.eos_name_string_to_number('newaccount') and action.new_account is not None):
+            return True
+
+    elif name == helpers.eos_name_string_to_number('transfer') and action.transfer is not None:
+        return True
+    
+    if action.unknown is not None:
+        return True
+
+    return False
