@@ -14,7 +14,6 @@ from trezor.messages import EosActionTransfer
 from trezor.messages import EosActionLinkAuth
 from trezor.messages import EosActionUnlinkAuth
 from trezor.messages import EosActionNewAccount
-from trezor.messages import EosActionUnknown
 
 
 from trezor import ui
@@ -24,8 +23,6 @@ from trezor.messages.ButtonRequest import ButtonRequest
 from trezor.messages import MessageType
 from trezor.ui.confirm import ConfirmDialog
 from trezor.ui.scroll import Scrollpage, animate_swipe, paginate
-from trezor.utils import HashWriter
-from trezor.crypto.hashlib import sha256
 
 from apps.eos import helpers
 from apps.eos.get_public_key import _public_key_to_wif
@@ -263,7 +260,7 @@ def confirm_action_newaccount(ctx, msg: EosActionNewAccount):
 
     await ctx.wait(paginator)
 
-def confirm_action_unknown(ctx, action, msg: EosActionUnknown):
+def confirm_action_unknown(ctx, action, checksum):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
     text = "Unknown Action"
     fields = []
@@ -273,11 +270,8 @@ def confirm_action_unknown(ctx, action, msg: EosActionUnknown):
     fields.append("Action Name:")
     fields.append(helpers.eos_name_to_string(action.name))
 
-    sha = HashWriter(sha256)
-    sha.extend(helpers.pack_variant32(len(msg.data)))
-    sha.extend(msg.data)
     fields.append("Checksum:")
-    fields.append(hexlify(sha.get_digest()).decode('ascii'))
+    fields.append(hexlify(checksum).decode('ascii'))
 
     pages = list(chunks(fields, THREE_FIELDS_PER_PAGE))
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)

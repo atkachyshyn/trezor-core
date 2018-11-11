@@ -1,6 +1,9 @@
 from apps.eos import consts, updaters, helpers
 from apps.eos.actions import layout
 
+from trezor.messages.EosTxActionRequest import EosTxActionRequest
+from trezor.utils import HashWriter
+from trezor.crypto.hashlib import sha256
 
 async def process_action(ctx, sha, action):
     if not check_action(action):
@@ -47,10 +50,34 @@ async def process_action(ctx, sha, action):
         await layout.confirm_action_newaccount(ctx, action.new_account)
         updaters.hashupdate_action_newaccount(sha, action.new_account)
     elif action.unknown is not None:
-        await layout.confirm_action_unknown(ctx, action.common, action.unknown)
-        updaters.hashupdate_action_unknown(sha, action.unknown)
+        await process_unknown_action(ctx, sha, action)
     else:
         raise ValueError("Unknown action")
+
+async def process_unknown_action(ctx, sha, action):
+    checksum = HashWriter(sha256)
+    checksum.extend(helpers.pack_variant32(action.unknown.data_size))
+    checksum.extend(action.unknown.data_chunk)
+
+    updaters.hashupdate_variant32(sha, action.unknown.data_size)
+    updaters.hashupdate_bytes(sha, action.unknown.data_chunk)
+    bytes_left = action.unknown.data_size - len(action.unknown.data_chunk)
+
+    while bytes_left != 0:
+        action = await ctx.call(EosTxActionRequest(data_size=bytes_left), *consts.action_wire_types)
+
+        if action.unknown is None:
+            raise ValueError("Bad response. Unknown struct expected.")
+
+        checksum.extend(action.unknown.data_chunk)
+        updaters.hashupdate_bytes(sha, action.unknown.data_chunk)
+
+        bytes_left -= len(action.unknown.data_chunk)
+        if bytes_left < 0:
+            raise ValueError("Bad response. Buffer overflow.")
+
+    await layout.confirm_action_unknown(ctx, action.common, checksum.get_digest())
+
 
 def check_action(action):
     account = action.common.account
