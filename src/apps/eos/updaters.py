@@ -15,6 +15,7 @@ from trezor.messages import EosActionCommon
 from trezor.messages import EosTxHeader
 from trezor.messages import EosAsset
 from trezor.utils import HashWriter
+
 from apps.common.writers import write_bytes, write_uint8, write_uint32_le, \
     write_uint64_le, write_uint16_le
 from apps.eos.writers import write_asset, write_auth, write_variant32
@@ -61,8 +62,8 @@ def hashupdate_action_delegate(hasher: HashWriter, msg: EosActionDelegate):
     w = bytearray()
     write_uint64_le(w, msg.sender)
     write_uint64_le(w, msg.receiver)
-    write_asset(w, msg.net_quantity)
-    write_asset(w, msg.cpu_quantity)
+    write_asset(w, msg.stake_net_quantity)
+    write_asset(w, msg.stake_cpu_quantity)
     write_uint8(w, 1 if msg.transfer else 0)
 
     hashupdate_variant32(hasher, len(w))
@@ -72,8 +73,8 @@ def hashupdate_action_undelegate(hasher: HashWriter, msg: EosActionUndelegate):
     w = bytearray()
     write_uint64_le(w, msg.sender)
     write_uint64_le(w, msg.receiver)
-    write_asset(w, msg.net_quantity)
-    write_asset(w, msg.cpu_quantity)
+    write_asset(w, msg.unstake_net_quantity)
+    write_asset(w, msg.unstake_cpu_quantity)
 
     hashupdate_variant32(hasher, len(w))
     hashupdate_bytes(hasher, w)

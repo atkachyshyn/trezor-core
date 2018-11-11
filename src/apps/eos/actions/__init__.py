@@ -1,8 +1,11 @@
-from apps.eos import consts, updaters
+from apps.eos import consts, updaters, helpers
 from apps.eos.actions import layout
 
 
 async def process_action(ctx, sha, action):
+    if not check_action(action):
+        raise ValueError("Unknown action")
+
     updaters.hashupdate_action_common(sha, action.common)
     if action.buy_ram is not None:
         await layout.confirm_action_buyram(ctx, action.buy_ram)
@@ -44,7 +47,7 @@ async def process_action(ctx, sha, action):
         await layout.confirm_action_newaccount(ctx, action.new_account)
         updaters.hashupdate_action_newaccount(sha, action.new_account)
     elif action.unknown is not None:
-        await layout.confirm_action_unknown(ctx, action.common.name, action.unknown)
+        await layout.confirm_action_unknown(ctx, action.common, action.unknown)
         updaters.hashupdate_action_unknown(sha, action.unknown)
     else:
         raise ValueError("Unknown action")

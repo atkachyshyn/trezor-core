@@ -38,15 +38,15 @@ FIVE_FIELDS_PER_PAGE = 5
 
 def confirm_action_buyram(ctx, msg: EosActionBuyRam):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
-    text = "Buy RAM"
-    payer_txt = "Payer:"
-    payer = (helpers.eos_name_to_string(msg.payer))
-    receiver_txt = "Receiver:"
-    receiver = (helpers.eos_name_to_string(msg.receiver))
-    amount_txt = ("Amount:")
-    amount = (helpers.eos_asset_to_string(msg.quantity))
 
-    fields = [payer_txt, payer, receiver_txt, receiver, amount_txt, amount]
+    text = "Buy RAM"
+    fields = []
+    fields.append("Payer:")
+    fields.append(helpers.eos_name_to_string(msg.payer))
+    fields.append("Receiver:")
+    fields.append(helpers.eos_name_to_string(msg.receiver))
+    fields.append("Amount:")
+    fields.append(helpers.eos_asset_to_string(msg.quantity))
 
     pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
 
@@ -57,40 +57,36 @@ def confirm_action_buyrambytes(ctx, msg: EosActionBuyRamBytes):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
 
     text = "Buy RAM"
-    payer_txt = "Payer:"
-    payer = (helpers.eos_name_to_string(msg.payer))
-    receiver_txt = "Receiver:"
-    receiver = (helpers.eos_name_to_string(msg.receiver))
-    amount_txt = "Bytes:"
-    amount = str(msg.bytes)
-
-    fields = [payer_txt, payer, receiver_txt, receiver, amount_txt, amount]
+    fields = []
+    fields.append("Payer:")
+    fields.append(helpers.eos_name_to_string(msg.payer))
+    fields.append("Receiver:")
+    fields.append(helpers.eos_name_to_string(msg.receiver))
+    fields.append("Bytes:")
+    fields.append(str(msg.bytes))
 
     pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
-
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
+
     await ctx.wait(paginator)
 
 def confirm_action_delegate(ctx, msg: EosActionDelegate):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
 
     text = "Delegate"
-    sender_txt = "Sender:"
-    sender = (helpers.eos_name_to_string(msg.sender))
-    receiver_txt = "Receiver:"
-    receiver = (helpers.eos_name_to_string(msg.receiver))
-    cpu_txt = "CPU:"
-    cpu = (helpers.eos_asset_to_string(msg.cpu_quantity))
-    net_txt = "NET:"
-    net = (helpers.eos_asset_to_string(msg.net_quantity))
-
-    fields = [sender_txt, sender, receiver_txt, receiver, cpu_txt, cpu, net_txt, net]
+    fields = []
+    fields.append("Sender:")
+    fields.append(helpers.eos_name_to_string(msg.sender))
+    fields.append("Receiver:")
+    fields.append(helpers.eos_name_to_string(msg.receiver))
+    fields.append("CPU:")
+    fields.append(helpers.eos_asset_to_string(msg.stake_cpu_quantity))
+    fields.append("NET:")
+    fields.append(helpers.eos_asset_to_string(msg.stake_net_quantity))
 
     if msg.transfer:
-        transfer_txt = "Transfer to:"
-        transfer = (helpers.eos_name_to_string(msg.receiver))
-        fields.append(transfer_txt)
-        fields.append(transfer)
+        fields.append("Transfer to:")
+        fields.append(helpers.eos_name_to_string(msg.receiver))
 
     pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
@@ -101,12 +97,12 @@ def confirm_action_sellram(ctx, msg: EosActionSellRam):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
 
     text = "Sell RAM"
-    receiver_txt = "Receiver:"
-    receiver = (helpers.eos_name_to_string(msg.account))
-    amount_txt = "Bytes:"
-    amount = str(msg.bytes)
-    
-    fields = [receiver_txt, receiver, amount_txt, amount]
+    fields = []
+    fields.append("Receiver:")
+    fields.append(helpers.eos_name_to_string(msg.account))
+    fields.append("Bytes:")
+    fields.append(str(msg.bytes))
+
     pages = list(chunks(fields, TWO_FIELDS_PER_PAGE))
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
 
@@ -116,16 +112,16 @@ def confirm_action_undelegate(ctx, msg: EosActionUndelegate):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
 
     text = "Undelegate"
-    sender_txt = "Sender:" 
-    sender = (helpers.eos_name_to_string(msg.sender))
-    receiver_txt = "Receiver:"
-    receiver = (helpers.eos_name_to_string(msg.receiver))
-    cpu_txt = "CPU:"
-    cpu = (helpers.eos_asset_to_string(msg.cpu_quantity))
-    net_txt = "NET:"
-    net = (helpers.eos_asset_to_string(msg.net_quantity))
+    fields = []
+    fields.append("Sender:")
+    fields.append(helpers.eos_name_to_string(msg.sender))
+    fields.append("Receiver:")
+    fields.append(helpers.eos_name_to_string(msg.receiver))
+    fields.append("CPU:")
+    fields.append(helpers.eos_asset_to_string(msg.unstake_cpu_quantity))
+    fields.append("NET:")
+    fields.append(helpers.eos_asset_to_string(msg.unstake_net_quantity))
 
-    fields = [sender_txt, sender, receiver_txt, receiver, cpu_txt, cpu, net_txt, net]
     pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
 
@@ -138,7 +134,7 @@ def confirm_action_refund(ctx, msg: EosActionRefund):
     await require_confirm(ctx, text, ButtonRequestType.ConfirmOutput)
 
 def confirm_action_voteproducer(ctx, msg: EosActionVoteProducer):
-    if msg.proxy != 0 and len(msg.producers) == 0:
+    if msg.proxy != 0 and not msg.producers:
         # PROXY
         text = Text("Vote for proxy", ui.ICON_CONFIRM, icon_color=ui.GREEN)
         text.normal("Voter:")
@@ -147,7 +143,7 @@ def confirm_action_voteproducer(ctx, msg: EosActionVoteProducer):
         text.normal(helpers.eos_name_to_string(msg.proxy))
         await require_confirm(ctx, text, ButtonRequestType.ConfirmOutput)
 
-    elif len(msg.producers) > 0:
+    elif msg.producers:
         # PRODUCERS
         await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
         producers = list(enumerate(msg.producers))
@@ -166,20 +162,17 @@ def confirm_action_transfer(ctx, msg: EosActionTransfer):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
 
     text = "Transfer"
-    sender_txt = "Sender:"
-    sender = (helpers.eos_name_to_string(msg.sender))
-    receiver_txt = "Receiver"
-    receiver = (helpers.eos_name_to_string(msg.receiver))
-    amount_txt = "Amount:"
-    amount = (helpers.eos_asset_to_string(msg.quantity))
-
-    fields = [sender_txt, sender, receiver_txt, receiver, amount_txt, amount]
+    fields = []
+    fields.append("From:")
+    fields.append(helpers.eos_name_to_string(msg.sender))
+    fields.append("To:")
+    fields.append(helpers.eos_name_to_string(msg.receiver))
+    fields.append("Amount:")
+    fields.append(helpers.eos_asset_to_string(msg.quantity))
 
     if msg.memo is not None:
-        memo_txt = "Memo:"
-        memo = (msg.memo[:512])
-        fields.append(memo_txt)
-        fields.append(memo)
+        fields.append("Memo:")
+        fields.append(msg.memo[:512])
 
     pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
 
@@ -190,14 +183,13 @@ def confirm_action_updateauth(ctx, msg: EosActionUpdateAuth):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
 
     text = "Update Auth"
-    account_txt = "Account:"
-    account = (helpers.eos_name_to_string(msg.account))
-    permission_txt = "Permission:"
-    permission = (helpers.eos_name_to_string(msg.permission))
-    parent_txt = "Parent:"
-    parent = (helpers.eos_name_to_string(msg.parent))
-
-    fields = [account_txt, account, permission_txt, permission, parent_txt, parent]
+    fields = []
+    fields.append("Account:")
+    fields.append(helpers.eos_name_to_string(msg.account))
+    fields.append("Permission:")
+    fields.append(helpers.eos_name_to_string(msg.permission))
+    fields.append("Parent:")
+    fields.append(helpers.eos_name_to_string(msg.parent))
     fields += authorization_fields(msg.auth)
 
     pages = list(chunks(fields, TWO_FIELDS_PER_PAGE))
@@ -217,16 +209,16 @@ def confirm_action_linkauth(ctx, msg: EosActionLinkAuth):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
 
     text = "Link Auth"
-    account_txt = "Account:"
-    account = (helpers.eos_name_to_string(msg.account))
-    code_txt = "Code:"
-    code = (helpers.eos_name_to_string(msg.code))
-    type_txt = "Type:"
-    msg_type = (helpers.eos_name_to_string(msg.type))
-    requirement_txt = "Requirement:"
-    requirement = (helpers.eos_name_to_string(msg.requirement))
-    
-    fields = [account_txt, account, code_txt, code, type_txt, msg_type, requirement_txt, requirement]
+    fields = []
+    fields.append("Account:")
+    fields.append(helpers.eos_name_to_string(msg.account))
+    fields.append("Code:")
+    fields.append(helpers.eos_name_to_string(msg.code))
+    fields.append("Type:")
+    fields.append(helpers.eos_name_to_string(msg.type))
+    fields.append("Requirement:")
+    fields.append(helpers.eos_name_to_string(msg.requirement))
+
     pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
 
@@ -236,14 +228,14 @@ def confirm_action_unlinkauth(ctx, msg: EosActionUnlinkAuth):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
 
     text = "Unlink Auth"
-    account_txt = "Account:"
-    account = (helpers.eos_name_to_string(msg.account))
-    code_txt = "Code:"
-    code = (helpers.eos_name_to_string(msg.code))
-    type_txt = "Type:"
-    msg_type = (helpers.eos_name_to_string(msg.type))
+    fields = []
+    fields.append("Account:")
+    fields.append(helpers.eos_name_to_string(msg.account))
+    fields.append("Code:")
+    fields.append(helpers.eos_name_to_string(msg.code))
+    fields.append("Type:")
+    fields.append(helpers.eos_name_to_string(msg.type))
 
-    fields = [account_txt, account, code_txt, code, type_txt, msg_type]
     pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
 
@@ -253,12 +245,11 @@ def confirm_action_newaccount(ctx, msg: EosActionNewAccount):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
 
     text = "New Account"
-    creator_txt = "Creator:"
-    creator = (helpers.eos_name_to_string(msg.creator))
-    name_txt = "Name:"
-    name = (helpers.eos_name_to_string(msg.name))
-
-    fields = [creator_txt, creator, name_txt, name]
+    fields = []
+    fields.append("Creator:")
+    fields.append(helpers.eos_name_to_string(msg.creator))
+    fields.append("Name:")
+    fields.append(helpers.eos_name_to_string(msg.name))
     fields += authorization_fields(msg.owner)
     fields += authorization_fields(msg.active)
 
@@ -267,10 +258,13 @@ def confirm_action_newaccount(ctx, msg: EosActionNewAccount):
 
     await ctx.wait(paginator)
 
-def confirm_action_unknown(ctx, name, msg: EosActionUnknown):
-    # TODO: DO it properly
-    text = Text("{} Action".format(helpers.eos_name_to_string(name)), ui.ICON_CONFIRM, icon_color=ui.GREEN)
-    text.normal("do it at your own risk") 
+def confirm_action_unknown(ctx, action, msg: EosActionUnknown):
+    text = Text("Unknown Action", ui.ICON_CONFIRM, icon_color=ui.GREEN)
+    text.normal("Do it at your own risk")
+    text.normal("Contract:")
+    text.normal(helpers.eos_name_to_string(action.account))
+    text.normal("Action Name:")
+    text.normal(helpers.eos_name_to_string(action.name))
     await require_confirm(ctx, text, ButtonRequestType.ConfirmOutput)
 
 @ui.layout

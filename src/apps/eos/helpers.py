@@ -1,6 +1,5 @@
 from trezor.messages import EosAsset
 
-
 def eos_name_to_string(value) -> str:
     charmap = ".12345abcdefghijklmnopqrstuvwxyz"
     tmp = value
@@ -15,6 +14,32 @@ def eos_name_to_string(value) -> str:
         actual_size -= 1
 
     return string[:actual_size]
+
+def eos_name_string_to_number(name: str) -> int:
+    length = len(name)
+    value = 0
+
+    for i in range(0, 13):
+        c = 0
+        if i < length and i < 13:
+            c = char_to_symbol(name[i])
+
+        if i < 12:
+            c &= 0x1f
+            c <<= 64 - 5 * (i + 1)
+        else:
+            c &= 0x0f
+
+        value |= c
+
+    return value
+
+def char_to_symbol(c: chr) -> int:
+    if 'a' <= c <= 'z':
+        return ord(c) - ord('a') + 6
+    if '1' <= c <= '5':
+        return ord(c) - ord('1') + 1
+    return 0
 
 def symbol_to_string(sym: int) -> str:
     sym >>= 8
