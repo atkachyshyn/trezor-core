@@ -174,7 +174,7 @@ def confirm_action_transfer(ctx, msg: EosActionTransfer):
 
     if msg.memo is not None:
         fields.append("Memo:")
-        fields.append(msg.memo[:512])
+        fields += split_data(msg.memo[:512])
 
     pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
 
@@ -194,7 +194,7 @@ def confirm_action_updateauth(ctx, msg: EosActionUpdateAuth):
     fields.append(helpers.eos_name_to_string(msg.parent))
     fields += authorization_fields(msg.auth)
 
-    pages = list(chunks(fields, TWO_FIELDS_PER_PAGE))
+    pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
 
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
     await ctx.wait(paginator)
@@ -255,25 +255,24 @@ def confirm_action_newaccount(ctx, msg: EosActionNewAccount):
     fields += authorization_fields(msg.owner)
     fields += authorization_fields(msg.active)
 
-    pages = list(chunks(fields, TWO_FIELDS_PER_PAGE))
+    pages = list(chunks(fields, FOUR_FIELDS_PER_PAGE))
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
 
     await ctx.wait(paginator)
 
 def confirm_action_unknown(ctx, action, checksum):
     await ctx.call(ButtonRequest(code=ButtonRequestType.ConfirmOutput), MessageType.ButtonAck)
-    text = "Unknown Action"
+    text = "Arbitrary data"
     fields = []
-    fields.append("Do it at your own risk")
     fields.append("Contract:")
     fields.append(helpers.eos_name_to_string(action.account))
     fields.append("Action Name:")
     fields.append(helpers.eos_name_to_string(action.name))
 
-    fields.append("Checksum:")
-    fields.append(hexlify(checksum).decode('ascii'))
+    fields.append("Checksum: ")
+    fields += split_data(hexlify(checksum).decode('ascii'))
 
-    pages = list(chunks(fields, THREE_FIELDS_PER_PAGE))
+    pages = list(chunks(fields, FIVE_FIELDS_PER_PAGE))
     paginator = paginate(show_lines_page, len(pages), FIRST_PAGE, pages, text)
 
     await ctx.wait(paginator)
@@ -281,7 +280,10 @@ def confirm_action_unknown(ctx, action, checksum):
 @ui.layout
 async def show_lines_page(page: int, page_count: int, pages: list, header: str):
     lines = ["%s" % field for field in pages[page]]
-    text = Text("{}".format(header), ui.ICON_CONFIRM, icon_color=ui.GREEN)
+    if header == "Arbitrary data":
+        text = Text("{} !!!".format(header), ui.ICON_WIPE, icon_color=ui.RED)
+    else:
+        text = Text("{}".format(header), ui.ICON_CONFIRM, icon_color=ui.GREEN)    
     text.mono(*lines)
 
     content = Scrollpage(text, page, page_count)
@@ -317,7 +319,7 @@ def authorization_fields(auth):
         header = "Key #{}:".format(i + 1)
         w_header = "Key #{} Weight:".format(i + 1)
         fields.append(header)
-        fields.append(_key)
+        fields += split_data(_key)
         fields.append(w_header)
         fields.append(_weight)
 
@@ -348,3 +350,12 @@ def authorization_fields(auth):
         fields.append(_weight)
 
     return fields
+
+def split_data(data):
+    temp_list = []
+    len_left = len(data)
+    while len_left > 0:
+        temp_list.append("{} ".format(data[:LINE_LENGTH]))
+        data = data[LINE_LENGTH:]
+        len_left = len(data)
+    return temp_list
